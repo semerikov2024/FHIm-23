@@ -6,10 +6,14 @@ document.addEventListener("DOMContentLoaded", () => {
 	const start = async() => {
 	      const mindarThree = new MindARThree({
 			container: document.body,
-			imageTargetSrc: "assets/cap.mind"
+			imageTargetSrc: "assets/cap.mind",
+			uiLoading: "yes", uiScanning: "no", uiError: "yes",
       		});
-	        const {renderer, scene, camera, video} = mindarThree;
+	        const {renderer, scene, camera} = mindarThree;
+
 		const anchor = mindarThree.addAnchor(0);
+
+		const results = document.getElementById("results");
 
 
 		// the link to your model provided by Teachable Machine export panel
@@ -24,13 +28,31 @@ document.addEventListener("DOMContentLoaded", () => {
 //		console.log("video = ", video);
 
 		await mindarThree.start();
-		renderer.setAnimationLoop(async() => {
+
+		let counter = 1;
+
+		renderer.setAnimationLoop(async () => {
+			counter += 1;
+			if(counter % 10 == 0)
+			{
   			// predict can take in an image, video or canvas html element
-			const prediction = await model.predict(video);
-			let str = "Визначено: ";
-			for (let i = 0; i < maxPredictions; i++) 
-				str = str + prediction[i].className + ": " + prediction[i].probability.toFixed(2) + "\n";
-			console.log(str);
+				const prediction = await model.predict(mindarThree.video);
+				let str = "";
+				let number = 0, prob = prediction[0].probability;
+				for (let i = 0; i < maxPredictions; i++) 
+				{
+					str = str + prediction[i].className + ": " + prediction[i].probability.toFixed(2) + "\n";
+					if (prediction[i].probability > prob)
+					{
+						number = i;
+						prob = prediction[i].probability;
+					}
+				}
+				if (prob >= 0.5)
+					str += "\n"+prediction[number].className;
+
+				results.innerHTML = str;
+			}
 		  	renderer.render(scene, camera);
 		});
 
@@ -38,11 +60,3 @@ document.addEventListener("DOMContentLoaded", () => {
 	start();
 });
 
-/*
-
-<div id="webcam-container"></div>
-<div id="label-container"></div>
-<script type="text/javascript">
-
-</script>
-*/
